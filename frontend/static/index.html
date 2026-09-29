@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlobeTrotter - AI Travel Concierge</title>
+<!-- Optional: used only to draw A2UI Icon components. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
+<style>
+  :root { 
+    --accent: #0d9488; 
+    --accent-hover: #0f766e;
+    --accent-gradient: linear-gradient(135deg, #0d9488 0%, #1e40af 100%);
+    --bg: #f8fafc; 
+    --border: #e2e8f0; 
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+  }
+  * { box-sizing: border-box; }
+  body { 
+    margin: 0; 
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+    background: var(--bg); 
+    display: flex; 
+    flex-direction: column; 
+    height: 100vh; 
+    color: var(--text-primary);
+  }
+  header { 
+    background: var(--accent-gradient); 
+    color: #fff; 
+    padding: 0.9rem 1.4rem; 
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between;
+  }
+  .brand { display: flex; align-items: center; gap: 0.75rem; }
+  .logo-icon { font-size: 1.6rem; }
+  .title { font-weight: 700; font-size: 1.2rem; letter-spacing: -0.01em; }
+  .subtitle { font-size: 0.78rem; opacity: 0.9; font-weight: 400; }
+
+  #log { 
+    flex: 1; 
+    overflow-y: auto; 
+    padding: 1.2rem; 
+    max-width: 820px; 
+    width: 100%; 
+    margin: 0 auto; 
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .msg { margin: 0.75rem 0; display: flex; flex-direction: column; align-items: flex-start; }
+  .msg.user { align-items: flex-end; }
+  .msg-label { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem; font-weight: 600; display: flex; align-items: center; gap: 0.3rem; }
+  
+  .bubble { 
+    display: inline-block; 
+    padding: 0.75rem 1.05rem; 
+    border-radius: 16px 16px 16px 4px; 
+    background: #fff; 
+    border: 1px solid var(--border); 
+    text-align: left; 
+    max-width: 85%; 
+    white-space: pre-wrap; 
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+  .msg.user .bubble { 
+    background: var(--accent); 
+    color: #fff; 
+    border: none; 
+    border-radius: 16px 16px 4px 16px; 
+    box-shadow: 0 2px 6px rgba(13,148,136,0.25);
+  }
+  /* When the reply is an A2UI card, drop the bubble chrome so the card stands alone. */
+  .bubble.rich { background: transparent; border: none; padding: 0; max-width: 100%; white-space: normal; box-shadow: none; }
+  
+  .footer-area {
+    max-width: 820px;
+    width: 100%;
+    margin: 0 auto;
+    background: #fff;
+    border-top: 1px solid var(--border);
+    padding: 0.75rem 1rem 1rem 1rem;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.03);
+  }
+
+  .prompt-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.65rem;
+    overflow-x: auto;
+    padding-bottom: 0.2rem;
+  }
+  .prompt-chip {
+    background: #f1f5f9;
+    border: 1px solid var(--border);
+    color: #334155;
+    padding: 0.45rem 0.85rem;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.18s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .prompt-chip:hover {
+    background: #ccfbf1;
+    border-color: var(--accent);
+    color: var(--accent-hover);
+    transform: translateY(-1px);
+  }
+
+  form { display: flex; gap: 0.6rem; }
+  input { 
+    flex: 1; 
+    padding: 0.75rem 1rem; 
+    border: 1px solid var(--border); 
+    border-radius: 10px; 
+    font-size: 0.95rem; 
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+  }
+  button.send-btn { 
+    padding: 0.75rem 1.25rem; 
+    border: none; 
+    border-radius: 10px; 
+    background: var(--accent); 
+    color: #fff; 
+    font-weight: 600; 
+    font-size: 0.95rem;
+    cursor: pointer; 
+    transition: background 0.15s; 
+  }
+  button.send-btn:hover { background: var(--accent-hover); }
+
+  /* --- A2UI component styles (Card, Column, Row, Text, Divider, List, Image, Icon) --- */
+  .a2card { border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.05); max-width: 100%; }
+  .a2card + .a2card, .a2col > .a2card { margin-top: .6rem; }
+  .a2col { display: flex; flex-direction: column; gap: .5rem; }
+  .a2row { display: flex; flex-direction: row; gap: .6rem; align-items: center; flex-wrap: wrap; }
+  .a2row.between { justify-content: space-between; }
+  .a2text { margin: 0; line-height: 1.45; }
+  .a2text.a2-h1 { font-size: 1.5rem; font-weight: 700; color: #0f172a; }
+  .a2text.a2-h2 { font-size: 1.25rem; font-weight: 700; color: #1e293b; }
+  .a2text.a2-h3 { font-size: 1.1rem; font-weight: 600; color: #334155; }
+  .a2text.a2-h4 { font-size: 1rem; font-weight: 600; color: #334155; }
+  .a2text.a2-caption { font-size: .85rem; color: #64748b; }
+  .a2divider { border: none; border-top: 1px solid var(--border); margin: .5rem 0; width: 100%; }
+  .a2img { max-width: 100%; border-radius: 10px; display: block; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-size: 1.25rem; line-height: 1; vertical-align: middle; color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <span class="logo-icon">✈️</span>
+    <div>
+      <div class="title">GlobeTrotter AI Concierge</div>
+      <div class="subtitle">Your Smart Travel & Destination Assistant</div>
+    </div>
+  </div>
+</header>
+
+<div id="log"></div>
+
+<div class="footer-area">
+  <div class="prompt-bar" id="promptBar">
+    <button type="button" class="prompt-chip" onclick="sendPrompt(this.dataset.prompt)" data-prompt="Plan a 3-day itinerary in Tokyo with local food options">🇯🇵 3-Day Tokyo Itinerary</button>
+    <button type="button" class="prompt-chip" onclick="sendPrompt(this.dataset.prompt)" data-prompt="What is the current weather and currency exchange rate in Paris?">🇫🇷 Paris Weather & Currency</button>
+    <button type="button" class="prompt-chip" onclick="sendPrompt(this.dataset.prompt)" data-prompt="Suggest allergy-friendly dining and accommodations in Rome">🇮🇹 Rome Allergy Dining</button>
+  </div>
+  <form id="form">
+    <input id="input" placeholder="Ask GlobeTrotter about travel, weather, currency, or destinations…" autocomplete="off" autofocus>
+    <button class="send-btn">Send</button>
+  </form>
+</div>
+
+<script>
+const log = document.getElementById("log");
+const form = document.getElementById("form");
+const input = document.getElementById("input");
+
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+function bubble(who) {
+  const m = el("div", "msg " + who);
+  const label = el("div", "msg-label", who === "user" ? "👤 You" : "🤖 GlobeTrotter");
+  const b = el("div", "bubble");
+  m.appendChild(label);
+  m.appendChild(b);
+  log.appendChild(m); 
+  log.scrollTop = log.scrollHeight;
+  return b;
+}
+
+function sendPrompt(promptText) {
+  if (!promptText) return;
+  input.value = promptText;
+  form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+}
+
+// Initial greeting
+const welcomeB = bubble("agent");
+welcomeB.textContent = "Welcome to GlobeTrotter! 🌍 I'm your AI travel concierge. Tap an example prompt below or ask me anything about destinations, itineraries, weather, currency rates, or allergy-friendly dining options!";
+
+/* ----------------------------------------------------------------------------
+ * A2UI mini-renderer (v0.8 Basic Catalog subset).
+ * Renders Card / Column / Row / Text / Divider / List / Image / Icon.
+ * Anything else falls back to plain text (see renderReply).
+ * -------------------------------------------------------------------------- */
+
+function boundStr(v) {
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v.literalString === "string") return v.literalString;
+  return "";
+}
+
+function childIds(props) {
+  const ids = [];
+  if (props && typeof props.child === "string") ids.push(props.child);
+  const ch = props && props.children;
+  if (ch && Array.isArray(ch.explicitList)) for (const c of ch.explicitList) if (typeof c === "string") ids.push(c);
+  return ids;
+}
+
+function iconName(n) { return String(n || "").replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/\s+/g, "_").toLowerCase(); }
+
+function buildNode(id, comps, seen) {
+  if (!id || seen.has(id)) return null;
+  seen.add(id);
+  const spec = comps[id];
+  if (!spec || typeof spec !== "object") return null;
+  const type = Object.keys(spec)[0];
+  const props = spec[type] || {};
+  const kids = () => childIds(props).map(cid => buildNode(cid, comps, seen)).filter(Boolean);
+
+  switch (type) {
+    case "Card": {
+      const d = el("div", "a2card"); kids().forEach(n => d.appendChild(n)); return d;
+    }
+    case "Column":
+    case "List": {
+      const horizontal = type === "List" && props.direction === "horizontal";
+      const d = el("div", horizontal ? "a2row" : "a2col"); kids().forEach(n => d.appendChild(n)); return d;
+    }
+    case "Row": {
+      const d = el("div", "a2row" + (props.distribution === "spaceBetween" ? " between" : ""));
+      kids().forEach(n => d.appendChild(n)); return d;
+    }
+    case "Text": {
+      const t = el("div", "a2text");
+      const hint = String(props.usageHint || "body").toLowerCase();
+      if (["h1", "h2", "h3", "h4", "h5", "h6"].includes(hint)) t.classList.add("a2-" + hint);
+      else if (hint === "caption") t.classList.add("a2-caption");
+      t.textContent = boundStr(props.text);
+      return t;
+    }
+    case "Divider":
+      return el("hr", "a2divider");
+    case "Image": {
+      const src = boundStr(props.url || props.src);
+      if (!/^https?:\/\//i.test(src)) return null;
+      const img = el("img", "a2img"); img.src = src; img.alt = boundStr(props.alt) || ""; return img;
+    }
+    case "Icon": {
+      const s = el("span", "material-symbols-outlined"); s.textContent = iconName(boundStr(props.name) || props.name); return s;
+    }
+    default:
+      return null;
+  }
+}
+
+function renderSurface(messages, container) {
+  const comps = {};
+  const roots = [];
+  for (const m of messages) {
+    if (m.beginRendering && typeof m.beginRendering.root === "string") roots.push(m.beginRendering.root);
+    const su = m.surfaceUpdate;
+    if (su && Array.isArray(su.components)) for (const c of su.components) if (c && c.id && c.component) comps[c.id] = c.component;
+  }
+  let rootIds = roots.filter(r => comps[r]);
+  if (rootIds.length === 0) {
+    const referenced = new Set();
+    for (const id in comps) { const spec = comps[id]; childIds(spec[Object.keys(spec)[0]] || {}).forEach(c => referenced.add(c)); }
+    rootIds = Object.keys(comps).filter(id => !referenced.has(id));
+  }
+  let drew = false;
+  for (const rid of rootIds) { const node = buildNode(rid, comps, new Set()); if (node) { container.appendChild(node); drew = true; } }
+  return drew;
+}
+
+function flattenText(messages) {
+  const out = [];
+  for (const m of messages) {
+    const su = m.surfaceUpdate;
+    if (su && Array.isArray(su.components)) for (const c of su.components) if (c && c.component && c.component.Text) out.push(boundStr(c.component.Text.text));
+  }
+  return out.join("\n").trim();
+}
+
+function renderReply(b, parts) {
+  b.textContent = "";
+  const texts = parts.filter(p => p && (p.kind === "text" || (!p.kind && p.text))).map(p => p.text || "");
+  const a2ui = parts.filter(p => p && p.kind === "a2ui" && p.data).map(p => p.data);
+
+  const textStr = texts.join("\n").trim();
+  if (textStr) b.appendChild(el("div", null, textStr));
+
+  if (a2ui.length) {
+    b.classList.add("rich");
+    if (!renderSurface(a2ui, b)) b.appendChild(el("div", null, flattenText(a2ui) || "(no card content)"));
+  }
+  if (!b.childNodes.length) b.textContent = "(no response)";
+  log.scrollTop = log.scrollHeight;
+}
+
+form.addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const text = input.value.trim();
+  if (!text) return;
+  bubble("user").textContent = text;
+  input.value = "";
+  const b = bubble("agent"); b.textContent = "…";
+  try {
+    const res = await fetch("/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text }) });
+    const raw = await res.text();
+    let data;
+    try { data = JSON.parse(raw); }
+    catch { throw new Error(`Server returned non-JSON (HTTP ${res.status}). ${raw.slice(0, 300)}`); }
+    renderReply(b, data.parts || []);
+  } catch (e) {
+    b.textContent = "Error: " + e.message;
+  }
+});
+</script>
+</body>
+</html>
